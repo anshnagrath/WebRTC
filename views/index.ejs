@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>
+        Intro to WebRTC
+    </title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    </link>
+
+</head>
+
+<body>
+    <div>
+        Video: <select id="camera"> </select>
+    </div>
+    <video autoplay></video>
+
+    <script>
+        const videoArea = document.querySelector("video");
+        const videoSelect = document.querySelector("#camera");
+
+        startStream()
+        navigator.mediaDevices.enumerateDevices().then((sourceInfos) => {
+
+            for (let i = 0; i < sourceInfos.length; i++) {
+                let sourceInfo = sourceInfos[i];
+                let option = document.createElement("option");
+                option.value = sourceInfo.label;
+
+                if (sourceInfo.kind == 'videoinput') {
+                    option.text = sourceInfo.label || 'camera ' + (videoSelect.length + 1);
+                    videoSelect.appendChild(option);
+                }
+            }
+
+        })
+        function startStream() {
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            const contraints = {
+                video: {
+                    mandatory: {
+                        minWidth: 600, maxWidth: 640, minHeight: 360, maxHeight: 480
+                    }
+                }, audio: true
+            };
+            navigator.getUserMedia(contraints, onSuccess, onError);
+        }
+
+        function onSuccess(stream) {
+            videoArea.volume = 0;
+            videoArea.muted = 0;
+            videoArea.srcObject = stream;
+            videoArea.className = "greyscale_filter"
+            videoArea.play();
+        }
+
+        function onError(error) {
+            console.log("Error Ocuured While Playing the Video Content:", error);
+
+        }
+
+    </script>
+</body>
+
+</html>
