@@ -14,35 +14,83 @@
     <div>
         Video: <select id="camera"> </select>
     </div>
-    <video autoplay></video>
+    <p><button id="takeProfilePicture" type="button" autofocus="true">Create Profile Picture</button></p>
+    <video id="videoTag" autoplay></video>
+    <canvas id="profilePictureCanvas" style="display: none;"></canvas>
+    <div>
+        <img id="profilePictureOutput">
+    </div>
 
     <script>
-        const videoArea = document.querySelector("video");
+        const videoArea = document.querySelector("#videoTag");
         const videoSelect = document.querySelector("#camera");
-
-        startStream()
-        navigator.mediaDevices.enumerateDevices().then((sourceInfos) => {
-
-            for (let i = 0; i < sourceInfos.length; i++) {
-                let sourceInfo = sourceInfos[i];
-                let option = document.createElement("option");
-                option.value = sourceInfo.label;
-
-                if (sourceInfo.kind == 'videoinput') {
-                    option.text = sourceInfo.label || 'camera ' + (videoSelect.length + 1);
-                    videoSelect.appendChild(option);
+        const takeProfilePicture = document.querySelector("#takeProfilePicture");
+        const profilePictureCanvas = document.querySelector("#profilePictureCanvas");
+        const profilePictureImage = document.querySelector("#profilePictureOutput");
+        let height = 0
+        const width = 240
+        let streaming = false
+        videoSelect.onChange = startStream;
+        videoArea.addEventListener('canplay', function (ev) {
+            if (!streaming) {
+                height = videoArea.videoHeight / (videoArea.videoWidth / width);
+                if (isNaN(height)) {
+                    height = width / (4 / 3);
                 }
+                videoArea.setAttribute('width', width);
+                videoArea.setAttribute('height', height);
+                profilePictureCanvas.setAttribute('height', height);
+                profilePictureCanvas.setAttribute('width', width);
+                streaming = true;
             }
 
-        })
+        }, false)
+        takeProfilePicture.addEventListener('click', function (event) {
+            takeProfilePic()
+            event.preventDefault();
+        }, false);
+        startStream()
+        if (typeof navigator.mediaDevices != undefined || typeof navigator.mediaDevices.enumerateDevices != undefined) {
+            navigator.mediaDevices.enumerateDevices().then((sourceInfos) => {
+                for (let i = 0; i < sourceInfos.length; i++) {
+                    let sourceInfo = sourceInfos[i];
+                    let option = document.createElement("option");
+                    option.value = sourceInfo.label;
+
+                    if (sourceInfo.kind == 'videoinput') {
+                        option.text = sourceInfo.label || 'camera ' + (videoSelect.length + 1);
+                        videoSelect.appendChild(option);
+                    }
+                }
+
+            })
+        } else {
+            videoSelect.style.visibility = 'hidden';
+        }
+
+        function takeProfilePic() {
+            var context = profilePictureCanvas.getContext('2d');
+            if (width && height) {
+                profilePictureCanvas.width = width;
+                profilePictureCanvas.height = height;
+                context.drawImage(videoArea, 0, 0, width, height);
+                // console.log(profilePictureCanvas, "====<<<<<<")
+                let data = profilePictureCanvas.toDataURL('image/png');
+
+                profilePictureImage.setAttribute('src', data);
+            }
+        }
         function startStream() {
             navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            let videoSource = videoSelect.value;
             const contraints = {
+
                 video: {
                     mandatory: {
-                        minWidth: 600, maxWidth: 640, minHeight: 360, maxHeight: 480
+                        minWidth: 240, maxWidth: 240, minHeight: 240, maxHeight: 240
                     }
-                }, audio: true
+                }, audio: true,
+                optional: [{ sourceId: videoSource }]
             };
             navigator.getUserMedia(contraints, onSuccess, onError);
         }
